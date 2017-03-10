@@ -12,7 +12,7 @@ def _test():
     )
     entity (
         name
-        "Name 2"
+        "Name  2"
         description
         "Description 2"
     )
@@ -31,7 +31,7 @@ def _test():
             )),
         )),
         ('entity', (
-            ('name', 'Name 2'),
+            ('name', 'Name  2'),
             ('description', 'Description 2'),
         )),
     )
