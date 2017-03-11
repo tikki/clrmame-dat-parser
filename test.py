@@ -14,7 +14,11 @@ def _test():
         name
         "Name  2"
         description
-        "Description 2"
+        "Description
+2
+
+  
+"
     )
     """
     expected = (
@@ -32,7 +36,7 @@ def _test():
         )),
         ('entity', (
             ('name', 'Name  2'),
-            ('description', 'Description 2'),
+            ('description', 'Description\n2\n\n  \n'),
         )),
     )
     result = tuple(parse(given.split("\n")))
