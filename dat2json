@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 """Convert a CLRMame Pro .dat file to JSON.
 """
@@ -18,20 +18,6 @@ If filename is '-', input will be read from STDIN.
 """.format(sys.argv[0])
     sys.exit(1)
 
-def _tup2dict(tup, parent=None):
-    if parent is None:
-        parent = {}
-    is_pair = len(tup) == 2 and isinstance(tup[0], str)
-    if is_pair:
-        key, val = tup
-        if not isinstance(val, str):
-            val = _tup2dict(val)
-        parent[key] = val
-    else: # new dict
-        for val in tup:
-            _tup2dict(val, parent)
-    return parent
-
 def main(args):
     """main"""
     if len(args) != 1:
@@ -40,11 +26,11 @@ def main(args):
     fileobj = sys.stdin if filename == '-' else open(filename, 'r')
     print "["
     first = True
-    for entry in parse(fileobj):
+    for entry in parse.to_dict(fileobj):
         if not first:
             print ",",
         first = False
-        print json.dumps(_tup2dict(entry))
+        print json.dumps(entry)
     print "]"
 
 if __name__ == '__main__':
