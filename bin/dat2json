@@ -1,21 +1,21 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 """Convert a CLRMame Pro .dat file to JSON.
 """
 
 import sys
 import json
-from parser import parse
+from clrmame.dat import parse_to_dict
 
 def _usage():
     """Print usage and quit."""
-    print """
-Usage: {} filename
+    print(f"""
+Usage: {sys.argv[0]} filename
 
     filename   the name of the .dat file (clrmame format), or '-'.
 
 If filename is '-', input will be read from STDIN.
-""".format(sys.argv[0])
+""")
     sys.exit(1)
 
 def main(args):
@@ -24,14 +24,15 @@ def main(args):
         _usage()
     filename = args[0]
     fileobj = sys.stdin if filename == '-' else open(filename, 'r')
-    print "["
+    out = sys.stdout.write
+    out("[")
     first = True
-    for entry in parse.to_dict(fileobj):
+    for entry in parse_to_dict(fileobj):
         if not first:
-            print ",",
+            out(","),
         first = False
-        print json.dumps(entry)
-    print "]"
+        out(json.dumps(entry))
+    out("]")
 
 if __name__ == '__main__':
     main(sys.argv[1:])

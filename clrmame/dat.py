@@ -2,9 +2,14 @@
 """
 
 from itertools import chain
+from typing import *
 
-def _tokens(chars):
-    """_tokens(chars: seq<char>) -> seq<str>"""
+
+Char = str
+Token = str
+
+
+def _tokens(chars: Iterable[Char]) -> Iterable[Token]:
     delimiters = '" \t\r\n'
     quot_mark = '"'
     is_quoted = False
@@ -20,7 +25,8 @@ def _tokens(chars):
             yield tok
             tok = ""
 
-def _parse(toks, seq_type=tuple):
+
+def _parse(toks: Iterable[Token], seq_type=tuple):
     """_parse(tokens: seq<str>) -> seq<seq>"""
     key = None
     for tok in toks:
@@ -33,12 +39,14 @@ def _parse(toks, seq_type=tuple):
             yield (key, value)
             key = None
 
-def parse(lines):
+
+def parse(lines: Iterable[str]) -> Iterable[Tuple[str, Union[Tuple, str]]]:
     """parse(lines: seq<str>) -> seq<key: str, value: seq|str>"""
     chars = chain.from_iterable(line + "\n" for line in lines)
     return _parse(_tokens(chars))
 
-def _parse_to_dict(lines):
+
+def parse_to_dict(lines: Iterable[str]) -> Iterable[Dict[str, Union[Dict, str]]]:
     """parse.to_dict(lines: seq<str>) -> seq<dict>
 
     This is probably the function you want to use.
@@ -47,5 +55,3 @@ def _parse_to_dict(lines):
     """
     chars = chain.from_iterable(line + "\n" for line in lines)
     return ({key: val} for key, val in _parse(_tokens(chars), dict))
-
-parse.to_dict = _parse_to_dict
