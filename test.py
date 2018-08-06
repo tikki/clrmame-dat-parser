@@ -1,7 +1,7 @@
 """Test parser
 """
 
-from parser import parse
+from clrmame.dat import parse_to_tuple
 
 def _test():
     given = """
@@ -39,7 +39,7 @@ def _test():
             ('description', 'Description\n2\n\n  \n'),
         )),
     )
-    result = tuple(parse(given.split("\n")))
+    result = tuple(parse_to_tuple(given.split("\n")))
     assert str(expected) == str(result)
 
 if __name__ == '__main__':
