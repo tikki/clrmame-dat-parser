@@ -5,7 +5,10 @@
 
 import sys
 import json
-from clrmame.dat import parse_to_dict
+
+from clrmame.dat import parse
+import clrmame.structs
+
 
 def _usage():
     """Print usage and quit."""
@@ -18,6 +21,13 @@ If filename is '-', input will be read from STDIN.
 """)
     sys.exit(1)
 
+
+def jsonify(thing):
+    if hasattr(thing, '_json_') and callable(thing._json_):
+        return thing._json_()
+    return thing
+
+
 def main(args):
     """main"""
     if len(args) != 1:
@@ -27,11 +37,15 @@ def main(args):
     out = sys.stdout.write
     out("[")
     first = True
-    for entry in parse_to_dict(fileobj):
+    typemap = {getattr(clrmame.structs, name): name.lower()
+               for name in clrmame.structs.__all__}
+    for entry in parse(fileobj):
         if not first:
             out(","),
         first = False
-        out(json.dumps(entry))
+        etype = type(entry)
+        out(json.dumps(entry if etype not in typemap
+                       else {typemap[etype]: entry}, default=jsonify))
     out("]")
 
 if __name__ == '__main__':
