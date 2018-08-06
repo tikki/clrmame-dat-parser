@@ -6,16 +6,19 @@
 import sys
 import json
 
-from clrmame.dat import parse
+from clrmame.dat import parse as parse_dat
+from clrmame.xml import parse as parse_xml
 import clrmame.structs
 
 
 def _usage():
     """Print usage and quit."""
     print(f"""
-Usage: {sys.argv[0]} filename
+Usage: {sys.argv[0]} [--xml|--dat] filename
 
-    filename   the name of the .dat file (clrmame format), or '-'.
+    --xml      parse input as clrmame xml format.
+    --dat      parse input as clrmame dat format.  (default)
+    filename   the name of the .dat file, or '-'.
 
 If filename is '-', input will be read from STDIN.
 """)
@@ -28,18 +31,38 @@ def jsonify(thing):
     return thing
 
 
+def parse_args(args):
+    filename = None
+    mode = 'dat'
+    for arg in args:
+        if arg == '--xml':
+            mode = 'xml'
+        elif arg == '--dat':
+            mode = 'dat'
+        elif filename is not None:
+            raise RuntimeError(f'Input filename already set: {filename}')
+        else:
+            filename = arg
+    return filename, mode
+
+
 def main(args):
     """main"""
-    if len(args) != 1:
+    try:
+        filename, mode = parse_args(args)
+    except RuntimeError as e:
+        print('Error:', e)
         _usage()
-    filename = args[0]
+    if None in (filename, mode):
+        _usage()
     fileobj = sys.stdin if filename == '-' else open(filename, 'r')
     out = sys.stdout.write
     out("[")
     first = True
     typemap = {getattr(clrmame.structs, name): name.lower()
                for name in clrmame.structs.__all__}
-    for entry in parse(fileobj):
+    parsermap = {'xml': parse_xml, 'dat': parse_dat}
+    for entry in parsermap[mode](fileobj):
         if not first:
             out(","),
         first = False
