@@ -1,7 +1,7 @@
-from typing import *
+from typing import Iterable, Union
 import xml.etree.ElementTree as ET
 
-from .structs import *
+from .structs import Header, Game, Rom
 
 
 def parse(file) -> Iterable[Union[Header, Game]]:

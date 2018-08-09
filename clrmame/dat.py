@@ -2,9 +2,9 @@
 """
 
 from itertools import chain
-from typing import *
+from typing import Callable, Dict, Iterable, Tuple, Type, TypeVar, Union
 
-from .structs import *
+from .structs import Game, Header, Rom
 
 
 Char = str
@@ -34,7 +34,8 @@ SeqT = TypeVar('SeqT')
 Seq = Callable[[Iterable], SeqT]
 
 
-def _parse(toks: Iterable[Token], seq_type: Seq) -> Iterable[Tuple[Key, Union[SeqT, Value]]]:
+def _parse(toks: Iterable[Token], seq_type: Seq) -> Iterable[Tuple[
+                                                    Key, Union[SeqT, Value]]]:
     """_parse(tokens: seq<str>) -> seq<seq>"""
     key = None
     for tok in toks:
@@ -43,31 +44,37 @@ def _parse(toks: Iterable[Token], seq_type: Seq) -> Iterable[Tuple[Key, Union[Se
                 break
             key = tok
         else:
-            value: Union[SeqT, Value] = tok if tok is not '(' else seq_type(_parse(toks, seq_type))
+            value: Union[SeqT, Value] = (tok if tok is not '('
+                                         else seq_type(_parse(toks, seq_type)))
             yield (key, value)
             key = None
 
 
 AnyStruct = Union[Game, Rom, Header]
+DecoderT = Tuple[Key, Union[AnyStruct, Value]]
 
 
-def _struct_decoder(pairs: Iterable[Tuple[Key, Union[AnyStruct, Value]]]) -> Iterable[Tuple[Key, Union[AnyStruct, Value]]]:
+def _struct_decoder(pairs: Iterable[DecoderT]) -> Iterable[DecoderT]:
     typemap: Dict[Key, Type] = {'clrmamepro': Header, 'game': Game, 'rom': Rom}
-    return tuple((key, val if key not in typemap else typemap[key].from_pairs(val)) for key, val in pairs)
+    return tuple((key, val if key not in typemap
+                  else typemap[key].from_pairs(val)) for key, val in pairs)
 
 
 def parse(lines: Iterable[str]) -> Iterable[Union[AnyStruct, Value]]:
     chars = chain.from_iterable(line + "\n" for line in lines)
-    return (val for key, val in _struct_decoder(_parse(_tokens(chars), _struct_decoder)))
+    return (val for key, val in
+            _struct_decoder(_parse(_tokens(chars), _struct_decoder)))
 
 
-def parse_to_tuple(lines: Iterable[str]) -> Iterable[Tuple[Key, Union[Tuple, Value]]]:
+def parse_to_tuple(lines: Iterable[str]) -> Iterable[Tuple[
+                                            Key, Union[Tuple, Value]]]:
     """parse(lines: seq<str>) -> seq<key: str, value: seq|str>"""
     chars = chain.from_iterable(line + "\n" for line in lines)
     return _parse(_tokens(chars), tuple)
 
 
-def parse_to_dict(lines: Iterable[str]) -> Iterable[Dict[Key, Union[Dict, Value]]]:
+def parse_to_dict(lines: Iterable[str]) -> Iterable[Dict[
+                                           Key, Union[Dict, Value]]]:
     """parse.to_dict(lines: seq<str>) -> seq<dict>
 
     This is probably the function you want to use.

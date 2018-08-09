@@ -1,4 +1,4 @@
-from typing import *
+from typing import Any, Iterable, Sequence, Tuple
 
 
 class _Slotted:
@@ -15,7 +15,8 @@ class _Slotted:
         return {slot: getattr(self, slot) for slot in self.__slots__}
 
     def __repr__(self):
-        args = ', '.join(f'{slot}={getattr(self, slot)!r}' for slot in self.__slots__)
+        args = ', '.join(f'{slot}={getattr(self, slot)!r}'
+                         for slot in self.__slots__)
         return f'{self.__class__.__name__}({args})'
 
     def _json_(self):

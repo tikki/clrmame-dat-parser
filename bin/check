@@ -2,12 +2,12 @@
 
 from contextlib import contextmanager
 from pathlib import Path
-from typing import *
+from typing import Tuple, Iterable, Generator, Dict, IO
 from zipfile import ZipFile, is_zipfile
 from zlib import crc32
 import sys
 
-from clrmame.structs import *
+from clrmame.structs import Rom, Game
 import clrmame
 
 
@@ -39,7 +39,7 @@ def _keys_from_game(game: Game) -> Iterable[Key]:
 
 
 @contextmanager
-def _datfile(path: Path) -> Generator['IO[bytes]', None, None]:
+def _datfile(path: Path) -> Generator[IO[bytes], None, None]:
     fileobj = zipfile = None
     if path.suffix != '.zip' or not is_zipfile(path):
         fileobj = path.open()
@@ -50,7 +50,7 @@ def _datfile(path: Path) -> Generator['IO[bytes]', None, None]:
             if len(names) != 1 or not names[0].endswith('.dat'):
                 raise RuntimeError(f'No dat file found in zip file: {path}')
             fileobj = zipfile.open(names[0])
-        except:
+        except Exception:
             zipfile.close()
             raise
     try:
@@ -147,6 +147,7 @@ def main(args):
     for game in missing:
         print(f'missing: {game.name}')
     print(f'info: missing {len(missing)} of {len(db)} roms')
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])

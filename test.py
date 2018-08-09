@@ -3,6 +3,7 @@
 
 from clrmame.dat import parse_to_tuple
 
+
 def _test():
     given = """
     entity (
@@ -41,6 +42,7 @@ def _test():
     )
     result = tuple(parse_to_tuple(given.split("\n")))
     assert str(expected) == str(result)
+
 
 if __name__ == '__main__':
     _test()
