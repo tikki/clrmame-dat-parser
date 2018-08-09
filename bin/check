@@ -107,23 +107,17 @@ def _h(crc: int) -> str:
     return f'{crc:X}'
 
 
-def _keys_from_file(file: Path) -> Iterable[Key]:
+def _keys_from_file(file: Path) -> Iterable[Tuple[Path, Key]]:
     if is_zipfile(file):
         with ZipFile(file, 'r') as z:
-            yield from ((_h(info.CRC), str(info.file_size))
-                        for info in z.infolist() if not info.is_dir())
+            for info in z.infolist():
+                if info.is_dir():
+                    continue
+                key = _h(info.CRC), str(info.file_size)
+                yield file.joinpath(info.filename), key
     else:
         key = _h(crc32(file.read_bytes())), str(file.stat().st_size)
-        yield key
-
-
-def _filename_with_key_from_zipfile(key: Key, file: Path) -> str:
-    with ZipFile(file, 'r') as z:
-        for info in z.infolist():
-            k = _h(info.CRC), str(info.file_size)
-            if key == k:
-                return info.filename
-    raise RuntimeError('8[')
+        yield file, key
 
 
 def main(args):
@@ -135,28 +129,20 @@ def main(args):
     db = RomDb(datfile)
     print(f'info: loaded details for {len(db)} roms')
     found = set()
-    for file in (i for i in searchdir.glob('**/*') if i.is_file()):
-        is_reported = False
-        for key in _keys_from_file(file):
+    for checkfile in (i for i in searchdir.glob('**/*') if i.is_file()):
+        for keyfile, key in _keys_from_file(checkfile):
             if key not in db:
-                if not is_reported:
-                    is_reported = True
-                    print(f'unknown: {file}')
+                print(f'unknown: {keyfile}')
                 continue
             rom = db.rom_with_key(key)
             game = db.game_with_key(key)
             found.add(rom)
-            print(f'found: {file}: {game.name}: {rom.name}')
-            if is_zipfile(file):
-                filename = _filename_with_key_from_zipfile(key, file)
-                targetcontainer = f'{game.name}.zip'
-                sourcepath = file.joinpath(filename)
-            else:
-                targetcontainer = game.name
-                sourcepath = file
+            print(f'found: {keyfile}: {game.name}: {rom.name}')
+            targetcontainer = (f'{game.name}.zip'
+                               if is_zipfile(checkfile) else game.name)
             targetpath = targetdir.joinpath(targetcontainer, rom.name)
-            if sourcepath.resolve() != targetpath.resolve():
-                print(f'rename: {sourcepath}: {targetpath}')
+            if keyfile.resolve() != targetpath.resolve():
+                print(f'rename: {keyfile}: {targetpath}')
     missing = set(db.roms()) - found
     for game in missing:
         print(f'missing: {game.name}')
