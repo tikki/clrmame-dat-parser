@@ -246,9 +246,9 @@ _move_into_zipfile() {
         _err "move into zip: could not move file: $source"
         return 1
     fi
-    $DRYRUN pushd -q "$tmpdir"
-    $DRYRUN "$ZIP_BIN" $ZIP_OPTS -m -T -MM -nw -q -0 "$zipfile" "$key"
-    $DRYRUN popd -q
+    $DRYRUN pushd "$tmpdir"
+    $DRYRUN "$ZIP_BIN" $ZIP_OPTS -m -T -MM -nw -0 "$zipfile" "$key"
+    $DRYRUN popd
     if [ -n "$tmpdir" ]; then
         $DRYRUN rmdir -p "$tmpdir"
     fi
