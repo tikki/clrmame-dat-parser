@@ -255,7 +255,6 @@ _move_into_zipfile() {
 }
 
 _move_across_zipfiles() {
-    # todo: test & fix
     source="$1"
     skey="$2"
     target="$3"
@@ -265,20 +264,30 @@ _move_across_zipfiles() {
         return $?
     fi
     if [ "$skey" = "$tkey" ]; then
-        $DRYRUN "$ZIP_BIN" $ZIP_OPTS "$source" "$skey" --copy --out "$target"
-        return $?
+        if ! $DRYRUN "$ZIP_BIN" $ZIP_OPTS "$source" "$skey" --copy --out "$target"; then
+            _err "move across zip: could not copy across zip: $source:$skey -> $target:$tkey"
+            return 1
+        fi
+        if ! _remove_from_zipfile "$source" "$skey"; then
+            _err "move across zip: could not remove from zip: $source:$skey"
+            return 1
+        fi
+        return 0
     fi
     tmpbase="$(dirname "$target")"
-    tmpfile="$(mktemp -qu "$tmpbase/.fix.$(basename "$target").XXXXXX")"
+    tmpfile="$(mktemp -qu "$tmpbase/.fix.XXXXXX").$(basename "$target")"
     if [ -z "$tmpfile" ]; then
         _err "move across zip: could not create temp file"
         return 1
     fi
-    if ! _extract_from_zipfile "$source" "$skey" "$tmpfile"; then
-        _err "move across zip: could not extract file: $source: $skey"
+    if ! _move_from_zipfile "$source" "$skey" "$tmpfile"; then
+        _err "move across zip: could not move file: $source:$skey -> $tmpfile"
         return 1
     fi
-    _move_into_zipfile "$target" "$tmpfile" "$tkey"
+    if ! _move_into_zipfile "$target" "$tmpfile" "$tkey"; then
+        _err "move across zip: could not move file: $tmpfile -> $target:$tkey"
+        return 1
+    fi
 }
 
 
@@ -337,8 +346,7 @@ _hide_unknown() {
            [ "$(dirname "$unknownfile")" = "$unknowndir" ]; then
             continue
         fi
-        unknowntarget="$unknowndir/$(basename "$unknownfile")"
-        # todo: keep dir structure
+        unknowntarget="$unknowndir/$(_withoutprefix "$unknownfile" "$basedir/")"
         if [ -f "$unknowntarget" ]; then
             _rmdupe "$unknowntarget" "$unknownfile"
             continue
@@ -347,7 +355,8 @@ _hide_unknown() {
             $DRYRUN mkdir -p "$unknowndir"
             unknowndir_made=1
         fi
-        $DRYRUN mv -n "$unknownfile" "$unknowndir/"
+        _print "$unknownfile -> $unknowndir"
+        _mmove "$unknownfile" "$unknowntarget"
     done
 }
 
@@ -368,6 +377,7 @@ _collect_found() {
     while read -r found; do
         source="$(_arg 1 "$found")"
         target="$(_arg 2 "$found")"
+        _print "$source -> $target"
         _mmove "$source" "$target"
     done
 }
