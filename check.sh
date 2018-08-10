@@ -1,8 +1,12 @@
 #!/bin/sh
 
+_err() {
+    echo >&2 "$(basename "$0"): error: $*"
+}
+
 DATPATH=$1
 if [ ! -f "$DATPATH" ]; then
-    echo >&2 "no such file: $DATPATH"
+    _err "no such file: $DATPATH"
     exit 1
 fi
 
@@ -14,10 +18,12 @@ ROMSPATH="$BASEPATH/$DATBASENAME"
 INFOPATH="$ROMSPATH/.nointro-$DATDATE"
 
 if [ ! -d "$ROMSPATH" ]; then
-    echo >&2 "error: missing roms directory: $ROMSPATH"
+    _err "missing roms directory: $ROMSPATH"
     exit 1
 fi
 
-PYTHONPATH=. bin/check "$DATPATH" "$ROMSPATH" | tee "$INFOPATH"
+PYTHONPATH=. bin/check "$DATPATH" "$ROMSPATH" |
+    grep -vE '^unknown: .+/\.(nointro-[-0-9]+|unknown/[-0-9]+/.+)$' |
+    tee "$INFOPATH"
 
 echo "info: written to $INFOPATH"
