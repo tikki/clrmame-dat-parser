@@ -114,7 +114,7 @@ def _keys_from_file(file: Path) -> Iterable[Tuple[Path, Key]]:
                 if info.is_dir():
                     continue
                 key = _h(info.CRC), str(info.file_size)
-                yield file.joinpath(info.filename), key
+                yield Path(f'{file}:/{info.filename}'), key
     else:
         key = _h(crc32(file.read_bytes())), str(file.stat().st_size)
         yield file, key
@@ -131,6 +131,7 @@ def main(args):
     found = set()
     for checkfile in (i for i in searchdir.glob('**/*') if i.is_file()):
         for keyfile, key in _keys_from_file(checkfile):
+            is_archive = keyfile is not checkfile
             if key not in db:
                 print(f'unknown: {keyfile}')
                 continue
@@ -138,9 +139,9 @@ def main(args):
             game = db.game_with_key(key)
             found.add(rom)
             print(f'found: {keyfile}: {game.name}: {rom.name}')
-            targetcontainer = (f'{game.name}.zip'
-                               if is_zipfile(checkfile) else game.name)
-            targetpath = targetdir.joinpath(targetcontainer, rom.name)
+            targetcontainer = (f'{game.name}{checkfile.suffix}:/'
+                               if is_archive else game.name)
+            targetpath = targetdir / targetcontainer / rom.name
             if keyfile.resolve() != targetpath.resolve():
                 print(f'rename: {keyfile}: {targetpath}')
     missing = set(db.roms()) - found
