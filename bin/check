@@ -71,10 +71,13 @@ class RomDb:
 
     def __init__(self, datfile: Path) -> None:
         self._db: Dict[Key, Game] = {}
+        self._rommap: Dict[Rom, Game] = {}
         self.load(datfile)
 
     def load(self, datfile: Path):
         for game in _games(datfile):
+            for rom in game.roms:
+                self._rommap[rom] = game
             for key in _keys_from_game(game):
                 if key in self._db:
                     raise RuntimeError('omg we have a collision!')
@@ -89,6 +92,9 @@ class RomDb:
             if key == _key_from_rom(rom):
                 return rom
         raise RuntimeError(':[')
+
+    def game_with_rom(self, rom: Rom) -> Game:
+        return self._rommap[rom]
 
     def games(self) -> Iterable[Game]:
         return self._db.values()
@@ -146,8 +152,9 @@ def main(args):
             if keyfile.resolve() != targetpath.resolve():
                 print('rename:', keyreport)
     missing = set(db.roms()) - found
-    for game in missing:
-        print(f'missing: {game.name}')
+    for rom in missing:
+        game = db.game_with_rom(rom)
+        print(f'missing: {game.name}: {rom.name}')
     print(f'info: missing {len(missing)} of {len(db)} roms')
 
 
