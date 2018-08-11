@@ -137,13 +137,14 @@ def main(args):
                 continue
             rom = db.rom_with_key(key)
             game = db.game_with_key(key)
+            keyreport = f'{keyfile}: {game.name}: {rom.name}'
             found.add(rom)
-            print(f'found: {keyfile}: {game.name}: {rom.name}')
+            print('found:', keyreport)
             targetcontainer = (f'{game.name}{checkfile.suffix}:/'
                                if is_archive else game.name)
             targetpath = targetdir / targetcontainer / rom.name
             if keyfile.resolve() != targetpath.resolve():
-                print(f'rename: {keyfile}: {targetpath}')
+                print('rename:', keyreport)
     missing = set(db.roms()) - found
     for game in missing:
         print(f'missing: {game.name}')
