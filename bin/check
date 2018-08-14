@@ -144,8 +144,10 @@ def main(args):
             rom = db.rom_with_key(key)
             game = db.game_with_key(key)
             keyreport = f'{keyfile}: {game.name}: {rom.name}'
-            found.add(rom)
             print('found:', keyreport)
+            if rom in found:
+                print('dupe:', keyreport)
+            found.add(rom)
             targetcontainer = (f'{game.name}{checkfile.suffix}:/'
                                if is_archive else game.name)
             targetpath = targetdir / targetcontainer / rom.name
