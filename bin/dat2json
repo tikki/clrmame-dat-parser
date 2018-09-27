@@ -13,7 +13,8 @@ import clrmame.structs
 
 def _usage():
     """Print usage and quit."""
-    print(f"""
+    print(
+        f"""
 Usage: {sys.argv[0]} [--xml|--dat] filename
 
     --xml      parse input as clrmame xml format.
@@ -21,26 +22,27 @@ Usage: {sys.argv[0]} [--xml|--dat] filename
     filename   the name of the .dat file, or '-'.
 
 If filename is '-', input will be read from STDIN.
-""")
+"""
+    )
     sys.exit(1)
 
 
 def jsonify(thing):
-    if hasattr(thing, '_json_') and callable(thing._json_):
+    if hasattr(thing, "_json_") and callable(thing._json_):
         return thing._json_()
     return thing
 
 
 def parse_args(args):
     filename = None
-    mode = 'dat'
+    mode = "dat"
     for arg in args:
-        if arg == '--xml':
-            mode = 'xml'
-        elif arg == '--dat':
-            mode = 'dat'
+        if arg == "--xml":
+            mode = "xml"
+        elif arg == "--dat":
+            mode = "dat"
         elif filename is not None:
-            raise RuntimeError(f'Input filename already set: {filename}')
+            raise RuntimeError(f"Input filename already set: {filename}")
         else:
             filename = arg
     return filename, mode
@@ -51,26 +53,31 @@ def main(args):
     try:
         filename, mode = parse_args(args)
     except RuntimeError as e:
-        print('Error:', e)
+        print("Error:", e)
         _usage()
     if None in (filename, mode):
         _usage()
-    fileobj = sys.stdin if filename == '-' else open(filename, 'r')
+    fileobj = sys.stdin if filename == "-" else open(filename, "r")
     out = sys.stdout.write
     out("[")
     first = True
-    typemap = {getattr(clrmame.structs, name): name.lower()
-               for name in clrmame.structs.__all__}
-    parsermap = {'xml': parse_xml, 'dat': parse_dat}
+    typemap = {
+        getattr(clrmame.structs, name): name.lower() for name in clrmame.structs.__all__
+    }
+    parsermap = {"xml": parse_xml, "dat": parse_dat}
     for entry in parsermap[mode](fileobj):
         if not first:
             out(","),
         first = False
         etype = type(entry)
-        out(json.dumps(entry if etype not in typemap
-                       else {typemap[etype]: entry}, default=jsonify))
+        out(
+            json.dumps(
+                entry if etype not in typemap else {typemap[etype]: entry},
+                default=jsonify,
+            )
+        )
     out("]")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

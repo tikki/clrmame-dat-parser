@@ -13,7 +13,8 @@ import clrmame
 
 def _usage():
     """Print usage and quit."""
-    print(f"""
+    print(
+        f"""
 Usage: {sys.argv[0]} {{datfile}} {{searchdir}}
 
     datfile    name of the .dat file
@@ -23,7 +24,8 @@ The given datfile may be a plain .dat file or a zipped .dat file.
 The given searchdir will be searched recursively.
 All files inside searchdir will be considered for matches.  For zip files, the
 files inside the zip files will be considered for matches.
-""")
+"""
+    )
     sys.exit(1)
 
 
@@ -41,14 +43,14 @@ def _keys_from_game(game: Game) -> Iterable[Key]:
 @contextmanager
 def _datfile(path: Path) -> Generator[IO[bytes], None, None]:
     fileobj = zipfile = None
-    if path.suffix != '.zip' or not is_zipfile(path):
+    if path.suffix != ".zip" or not is_zipfile(path):
         fileobj = path.open()
     else:
-        zipfile = ZipFile(path, 'r')
+        zipfile = ZipFile(path, "r")
         try:
             names = zipfile.namelist()
-            if len(names) != 1 or not names[0].endswith('.dat'):
-                raise RuntimeError(f'No dat file found in zip file: {path}')
+            if len(names) != 1 or not names[0].endswith(".dat"):
+                raise RuntimeError(f"No dat file found in zip file: {path}")
             fileobj = zipfile.open(names[0])
         except Exception:
             zipfile.close()
@@ -63,12 +65,12 @@ def _datfile(path: Path) -> Generator[IO[bytes], None, None]:
 
 def _games(datfile: Path) -> Iterable[Game]:
     with _datfile(datfile) as dat:
-        yield from (struct for struct in
-                    clrmame.xml.parse(dat) if isinstance(struct, Game))
+        yield from (
+            struct for struct in clrmame.xml.parse(dat) if isinstance(struct, Game)
+        )
 
 
 class RomDb:
-
     def __init__(self, datfile: Path) -> None:
         self._db: Dict[Key, Game] = {}
         self._rommap: Dict[Rom, Game] = {}
@@ -80,7 +82,7 @@ class RomDb:
                 self._rommap[rom] = game
             for key in _keys_from_game(game):
                 if key in self._db:
-                    raise RuntimeError('omg we have a collision!')
+                    raise RuntimeError("omg we have a collision!")
                 self._db[key] = game
 
     def game_with_key(self, key: Key) -> Game:
@@ -91,7 +93,7 @@ class RomDb:
         for rom in game.roms:
             if key == _key_from_rom(rom):
                 return rom
-        raise RuntimeError(':[')
+        raise RuntimeError(":[")
 
     def game_with_rom(self, rom: Rom) -> Game:
         return self._rommap[rom]
@@ -110,17 +112,17 @@ class RomDb:
 
 
 def _h(crc: int) -> str:
-    return f'{crc:X}'
+    return f"{crc:X}"
 
 
 def _keys_from_file(file: Path) -> Iterable[Tuple[Path, Key]]:
     if is_zipfile(file):
-        with ZipFile(file, 'r') as z:
+        with ZipFile(file, "r") as z:
             for info in z.infolist():
                 if info.is_dir():
                     continue
                 key = _h(info.CRC), str(info.file_size)
-                yield Path(f'{file}:/{info.filename}'), key
+                yield Path(f"{file}:/{info.filename}"), key
     else:
         key = _h(crc32(file.read_bytes())), str(file.stat().st_size)
         yield file, key
@@ -133,32 +135,33 @@ def main(args):
     searchdir = Path(args[1])
     targetdir = searchdir
     db = RomDb(datfile)
-    print(f'info: loaded details for {len(db)} roms')
+    print(f"info: loaded details for {len(db)} roms")
     found = set()
-    for checkfile in (i for i in searchdir.glob('**/*') if i.is_file()):
+    for checkfile in (i for i in searchdir.glob("**/*") if i.is_file()):
         for keyfile, key in _keys_from_file(checkfile):
             is_archive = keyfile is not checkfile
             if key not in db:
-                print(f'unknown: {keyfile}')
+                print(f"unknown: {keyfile}")
                 continue
             rom = db.rom_with_key(key)
             game = db.game_with_key(key)
-            keyreport = f'{keyfile}: {game.name}: {rom.name}'
-            print('found:', keyreport)
+            keyreport = f"{keyfile}: {game.name}: {rom.name}"
+            print("found:", keyreport)
             if rom in found:
-                print('dupe:', keyreport)
+                print("dupe:", keyreport)
             found.add(rom)
-            targetcontainer = (f'{game.name}{checkfile.suffix}:/'
-                               if is_archive else game.name)
+            targetcontainer = (
+                f"{game.name}{checkfile.suffix}:/" if is_archive else game.name
+            )
             targetpath = targetdir / targetcontainer / rom.name
             if keyfile.resolve() != targetpath.resolve():
-                print('rename:', keyreport)
+                print("rename:", keyreport)
     missing = set(db.roms()) - found
     for rom in missing:
         game = db.game_with_rom(rom)
-        print(f'missing: {game.name}: {rom.name}')
-    print(f'info: missing {len(missing)} of {len(db)} roms')
+        print(f"missing: {game.name}: {rom.name}")
+    print(f"info: missing {len(missing)} of {len(db)} roms")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main(sys.argv[1:])

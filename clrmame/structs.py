@@ -2,7 +2,6 @@ from typing import Any, Iterable, Sequence, Tuple
 
 
 class _Slotted:
-
     def __init__(self, **kwargs):
         for slot in self.__slots__:
             setattr(self, slot, kwargs.get(slot))
@@ -15,9 +14,8 @@ class _Slotted:
         return {slot: getattr(self, slot) for slot in self.__slots__}
 
     def __repr__(self):
-        args = ', '.join(f'{slot}={getattr(self, slot)!r}'
-                         for slot in self.__slots__)
-        return f'{self.__class__.__name__}({args})'
+        args = ", ".join(f"{slot}={getattr(self, slot)!r}" for slot in self.__slots__)
+        return f"{self.__class__.__name__}({args})"
 
     def _json_(self):
         return self.as_dict()
@@ -31,12 +29,12 @@ class Rom(_Slotted):
     sha1: str
     status: str
 
-    __slots__ = 'name', 'size', 'crc', 'md5', 'sha1', 'status'
+    __slots__ = "name", "size", "crc", "md5", "sha1", "status"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if 'flags' in kwargs and 'status' not in kwargs:
-            self.status = kwargs['flags']
+        if "flags" in kwargs and "status" not in kwargs:
+            self.status = kwargs["flags"]
 
     @property
     def flags(self):
@@ -52,14 +50,14 @@ class Game(_Slotted):
     description: str
     roms: Sequence[Rom]
 
-    __slots__ = 'name', 'description', 'roms'
+    __slots__ = "name", "description", "roms"
 
     @classmethod
     def from_pairs(Class, pairs: Iterable[Tuple[str, Any]]):
         self = Class()
         roms = []
         for key, value in pairs:
-            if key == 'rom':
+            if key == "rom":
                 roms.append(value)
             elif key in self.__slots__:
                 setattr(self, key, value)
@@ -76,7 +74,7 @@ class Header(_Slotted):
     homepage: str
     url: str
 
-    __slots__ = 'name', 'description', 'version', 'author', 'homepage', 'url'
+    __slots__ = "name", "description", "version", "author", "homepage", "url"
 
 
-__all__ = 'Rom', 'Game', 'Header'
+__all__ = "Rom", "Game", "Header"
