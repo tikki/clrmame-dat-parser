@@ -264,6 +264,10 @@ _autounarchive() {
     _debug "autounarchive: patching: $path"
     archive="$(_archivepath "$path")"
     if [ -n "$archive" ]; then
+        if [ ! -f "$archive" ]; then
+            _err "autounarchive: archive missing: $archive"
+            return 1
+        fi
         archivename="$(_withoutprefix "$archive" "$SEARCHDIR/")"
         patchdir="$FIXDIR/$archivename"
         if [ -f "$archive" ] && ! _unzip_and_delete "$archive" "$patchdir"; then
@@ -307,11 +311,20 @@ _mmove() {
         return 0
     fi
     realsource="$(_autounarchive "$source")"
+    if [ -z "$realsource" ]; then
+        return 1
+    fi
     realtarget="$(_autounarchive "$target")"
+    if [ -z "$realtarget" ]; then
+        return 1
+    fi
     _move_file "$realsource" "$realtarget"
 }
 
 _rezip_fixdir() {
+    if [ ! -d "$FIXDIR" ]; then
+        return
+    fi
     find "$FIXDIR" -type d -name '*.zip' |
     while read -r patchdir; do
         patchdir="$(realpath "$patchdir")"
@@ -345,6 +358,15 @@ _hide_unknown() {
             continue
         fi
         archive="$(_archivepath "$unknownfile")"
+        if [ -z "$archive" ]; then
+            sourcefile="$unknownfile"
+        else
+            sourcefile="$archive"
+        fi
+        if [ ! -f "$sourcefile" ]; then
+            _err "unknown: file not found: $sourcefile"
+            continue
+        fi
         if [ -n "$archive" ] && _is_zipfile "$archive" &&
            _is_alone_in_zipfile "$archive" "$(_archivekey "$unknownfile")"; then
             # Short circuit mmove's autounarchiving, should save some resources
